@@ -6,6 +6,7 @@ const app = express();
 app.use(express.json());
 const { PrismaClient } = require ('@prisma/client')
 const prisma = new PrismaClient();
+const jwt = require('jsonwebtoken')
 
 /*
 admin
@@ -26,6 +27,8 @@ app.post('/register', async(req,res) => {
                 password: hashedPassword
             }
         })
+        const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '45s'})
+        res.status(200).send({accessToken: accessToken})
     }
     catch (err)
     {
@@ -34,17 +37,39 @@ app.post('/register', async(req,res) => {
     }
 })
 
-app.post('/login', async (req,res) => {
+app.get('/login', async (req,res) => {
     try {
         const user = await prisma.user.findUnique({where: {username: req.body.username}})
         const isAuthed = await bcrypt.compare(req.body.password, user.password)
-        res.status(200).send({message: isAuthed})
+        if (isAuthed) {
+            const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '45s'})
+            res.status(200).send({accessToken: accessToken})
+        }
+        else {
+            res.status(401).send({message: 'Invalid username or password.'})
+        }
     }
     catch (err) {
         console.log(err)
         res.status(500).send({message: 'Error'})
     }
 })
+
+app.get('/tokenCheck', authToken, (req, res) => {
+    res.status(200).send({'message': 'verified!', 'user': req.user})
+})
+
+function authToken(req, res, next) {
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1] //Bearer TOKEn
+    console.log(`Token : ${authHeader}`)
+    if (!token) return res.sendStatus(401)
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403)
+        req.user = user
+        next()
+    })
+}
 
 app.listen(process.env.PORT || 5555, () => {
     console.log(`Listening to port ${process.env.PORT || 5555}`)
