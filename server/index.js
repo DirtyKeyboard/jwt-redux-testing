@@ -37,9 +37,10 @@ app.post('/register', async(req,res) => {
     }
 })
 
-app.get('/login', async (req,res) => {
+app.post('/login', async (req,res) => {
     try {
         const user = await prisma.user.findUnique({where: {username: req.body.username}})
+        if (!user) return res.sendStatus(401)
         const isAuthed = await bcrypt.compare(req.body.password, user.password)
         if (isAuthed) {
             const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '45s'})
