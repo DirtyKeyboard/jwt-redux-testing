@@ -44,7 +44,7 @@ app.post('/login', async (req,res) => {
         const isAuthed = await bcrypt.compare(req.body.password, user.password)
         if (isAuthed) {
             const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '45s'})
-            res.status(200).send({accessToken: accessToken})
+            res.status(200).send({username: user.username, accessToken: accessToken})
         }
         else {
             res.status(401).send({message: 'Invalid username or password.'})
