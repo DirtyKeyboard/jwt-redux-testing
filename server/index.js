@@ -14,7 +14,7 @@ password12345
 */
 
 app.get('/', async(req, res) => {
-    res.status(200).send({message: 'Hello World!'})
+    res.status(200).send({message: 'Hi'})
 })
 
 app.post('/register', async(req,res) => {
